@@ -34,7 +34,8 @@ const PORT = parseInt(process.env.PORT || '4000', 10);
 async function start(){
     await connectDB();
     httpServer.listen(PORT,()=>{
-        console.log(`Server is Up and running on PORT ${PORT}`);
+        console.log(`Backend Server is Up and running on PORT ${PORT}`);
+        console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
         console.log('MongoDB: connected');
     })
 }

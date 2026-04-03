@@ -100,4 +100,18 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
   }
 });
 
+router.get('/me', protect, async (req: AuthRequest, res: Response): Promise<void> =>{
+    try {
+        const user = await User.findById(req.user!.id);
+
+        if(!user){
+            res.status(404).json({message: "User not Found"});
+            return;
+        }
+        res.json({ success: true, user})
+    } catch (error) {
+        res.status(500).json({ message : "Failed to fetch user", error: error})
+    }
+})
+
 export default router;
