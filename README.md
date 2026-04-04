@@ -136,6 +136,19 @@ npm start          # Serves production build
 
 ---
 
+## 🤝 Contributing
+
+This project welcomes **open source contributions**! Feel free to:
+- Report bugs and suggest features via issues
+- Submit pull requests for improvements, bug fixes, or features
+- Fork the repo and experiment
+
+However, **deployment and production hosting** are managed solely by the project maintainer.
+
+---
+
 ## 📄 License
 
-MIT — free to use, modify, and deploy.
+**Code License:** MIT — Anyone can use, modify, and contribute.
+
+**Deployment:** Restricted to project maintainer only. Contributions welcome, but production deployment rights are reserved.

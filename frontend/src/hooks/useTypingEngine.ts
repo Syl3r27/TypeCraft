@@ -11,11 +11,11 @@ interface UseTypingEngineProps {
 
 export function useTypingEngine({ words, timerMode, onComplete }: UseTypingEngineProps) {
   const [wordStates, setWordStates] = useState<WordState[]>(() =>
-    words.map((word) => ({
+    words.map((word, i) => ({
       word,
       letters: word.split('').map((char) => ({ char, state: 'pending' as LetterState })),
       typed: '',
-      isActive: false,
+      isActive: i === 0,
       isCompleted: false,
     }))
   );
@@ -25,11 +25,6 @@ export function useTypingEngine({ words, timerMode, onComplete }: UseTypingEngin
   const [timeLeft, setTimeLeft] = useState(parseInt(timerMode));
   const [isRunning, setIsRunning] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
-
-  // Stats
-  const [correctChars, setCorrectChars] = useState(0);
-  const [totalKeystrokes, setTotalKeystrokes] = useState(0);
-  const [errorCount, setErrorCount] = useState(0);
   const [wpm, setWpm] = useState(0);
   const [accuracy, setAccuracy] = useState(100);
 
@@ -38,63 +33,35 @@ export function useTypingEngine({ words, timerMode, onComplete }: UseTypingEngin
   const correctCharsRef = useRef(0);
   const totalKeystrokesRef = useRef(0);
   const errorCountRef = useRef(0);
+  const currentWordIndexRef = useRef(0);
+  const isFinishedRef = useRef(false);
+  const isRunningRef = useRef(false);
+  // Keep latest onComplete in a ref so timer closure is never stale
+  const onCompleteRef = useRef(onComplete);
+  useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
 
-  // Initialize first word as active
-  useEffect(() => {
-    setWordStates((prev) => {
-      const next = [...prev];
-      if (next[0]) next[0] = { ...next[0], isActive: true };
-      return next;
-    });
-  }, []);
-
-  const startTimer = useCallback(() => {
-    if (isRunning) return;
-    setIsRunning(true);
-    startTimeRef.current = Date.now();
-
-    timerRef.current = setInterval(() => {
-      setTimeLeft((prev) => {
-        const elapsed = (Date.now() - startTimeRef.current) / 1000;
-        const newTime = parseInt(timerMode) - Math.floor(elapsed);
-
-        // Update live WPM
-        const liveWpm = calculateWPM(correctCharsRef.current, elapsed);
-        const liveAcc = calculateAccuracy(
-          correctCharsRef.current,
-          totalKeystrokesRef.current
-        );
-        setWpm(liveWpm);
-        setAccuracy(liveAcc);
-
-        if (newTime <= 0) {
-          clearInterval(timerRef.current!);
-          finishTest();
-          return 0;
-        }
-        return newTime;
-      });
-    }, 100);
-  }, [isRunning, timerMode]);
+  // Sync word index ref
+  useEffect(() => { currentWordIndexRef.current = currentWordIndex; }, [currentWordIndex]);
 
   const finishTest = useCallback(() => {
+    if (isFinishedRef.current) return; // prevent double-fire
+    isFinishedRef.current = true;
     if (timerRef.current) clearInterval(timerRef.current);
+
+    const elapsed = Math.max((Date.now() - startTimeRef.current) / 1000, 0.1);
+    const finalWpm = calculateWPM(correctCharsRef.current, elapsed);
+    const finalAcc = calculateAccuracy(correctCharsRef.current, totalKeystrokesRef.current);
+
     setIsFinished(true);
     setIsRunning(false);
-
-    const elapsed = (Date.now() - startTimeRef.current) / 1000 || 1;
-    const finalWpm = calculateWPM(correctCharsRef.current, elapsed);
-    const finalAcc = calculateAccuracy(
-      correctCharsRef.current,
-      totalKeystrokesRef.current
-    );
+    isRunningRef.current = false;
 
     const result: TestResult = {
       wpm: finalWpm,
       accuracy: finalAcc,
       errors: errorCountRef.current,
       duration: Math.round(elapsed),
-      wordCount: currentWordIndex,
+      wordCount: currentWordIndexRef.current,
       mode: timerMode,
       chars: {
         correct: correctCharsRef.current,
@@ -104,26 +71,49 @@ export function useTypingEngine({ words, timerMode, onComplete }: UseTypingEngin
       },
     };
 
-    onComplete?.(result);
-  }, [currentWordIndex, timerMode, onComplete]);
+    // Use ref so we always call the latest callback
+    onCompleteRef.current?.(result);
+  }, [timerMode]);
+
+  const startTimer = useCallback(() => {
+    if (isRunningRef.current) return;
+    isRunningRef.current = true;
+    setIsRunning(true);
+    startTimeRef.current = Date.now();
+
+    timerRef.current = setInterval(() => {
+      const elapsed = (Date.now() - startTimeRef.current) / 1000;
+      const newTime = parseInt(timerMode) - Math.floor(elapsed);
+
+      // Update live stats
+      setWpm(calculateWPM(correctCharsRef.current, elapsed));
+      setAccuracy(calculateAccuracy(correctCharsRef.current, totalKeystrokesRef.current));
+      setTimeLeft(newTime <= 0 ? 0 : newTime);
+
+      if (newTime <= 0) {
+        finishTest();
+      }
+    }, 100);
+  }, [timerMode, finishTest]);
 
   const handleInput = useCallback(
     (value: string) => {
-      if (isFinished) return;
+      if (isFinishedRef.current) return;
 
       // Start timer on first keystroke
-      if (!isRunning && value.length > 0) {
+      if (!isRunningRef.current && value.length > 0) {
         startTimer();
       }
 
       const lastChar = value[value.length - 1];
 
-      // Space = move to next word
+      // Space = advance to next word
       if (lastChar === ' ') {
-        const currentWord = words[currentWordIndex];
-        const typedWord = value.trim();
+        const currentWord = words[currentWordIndexRef.current];
+        if (!currentWord) return;
+        const typedWord = value.trimEnd(); // keep leading chars, remove trailing space
 
-        // Count correct chars in this word
+        // Score this word
         let wordCorrect = 0;
         for (let i = 0; i < Math.min(typedWord.length, currentWord.length); i++) {
           if (typedWord[i] === currentWord[i]) {
@@ -132,93 +122,71 @@ export function useTypingEngine({ words, timerMode, onComplete }: UseTypingEngin
             errorCountRef.current++;
           }
         }
-        correctCharsRef.current += wordCorrect + 1; // +1 for space
+        correctCharsRef.current += wordCorrect + 1; // +1 for the space
         totalKeystrokesRef.current += typedWord.length + 1;
 
-        // Mark word as completed
+        const nextIndex = currentWordIndexRef.current + 1;
+
         setWordStates((prev) => {
           const next = [...prev];
-          const word = words[currentWordIndex];
-          next[currentWordIndex] = {
-            ...next[currentWordIndex],
+          next[currentWordIndexRef.current] = {
+            ...next[currentWordIndexRef.current],
             typed: typedWord,
             isActive: false,
             isCompleted: true,
-            letters: word.split('').map((char, i) => ({
+            letters: currentWord.split('').map((char, i) => ({
               char,
-              state:
+              state: (
                 i < typedWord.length
-                  ? typedWord[i] === char
-                    ? 'correct'
-                    : 'incorrect'
-                  : 'incorrect',
+                  ? typedWord[i] === char ? 'correct' : 'incorrect'
+                  : 'incorrect'
+              ) as LetterState,
             })),
           };
-          // Activate next word
-          if (next[currentWordIndex + 1]) {
-            next[currentWordIndex + 1] = {
-              ...next[currentWordIndex + 1],
-              isActive: true,
-            };
+          if (next[nextIndex]) {
+            next[nextIndex] = { ...next[nextIndex], isActive: true };
           }
           return next;
         });
 
-        setCurrentWordIndex((prev) => prev + 1);
+        currentWordIndexRef.current = nextIndex;
+        setCurrentWordIndex(nextIndex);
         setCurrentInput('');
         return;
       }
 
-      // Backspace handling is automatic via controlled input
       setCurrentInput(value);
 
-      // Update letter states for current word in real-time
+      // Real-time letter coloring for current word
       setWordStates((prev) => {
         const next = [...prev];
-        const word = words[currentWordIndex];
+        const word = words[currentWordIndexRef.current];
         if (!word) return prev;
 
         const letters = word.split('').map((char, i) => ({
           char,
           state: (
             i < value.length
-              ? value[i] === char
-                ? 'correct'
-                : 'incorrect'
+              ? value[i] === char ? 'correct' : 'incorrect'
               : 'pending'
           ) as LetterState,
         }));
 
-        // Add extra characters
-        const extraLetters =
-          value.length > word.length
-            ? value
-                .slice(word.length)
-                .split('')
-                .map((char) => ({ char, state: 'extra' as LetterState }))
-            : [];
+        const extraLetters = value.length > word.length
+          ? value.slice(word.length).split('').map((char) => ({
+              char, state: 'extra' as LetterState,
+            }))
+          : [];
 
-        next[currentWordIndex] = {
-          ...next[currentWordIndex],
+        next[currentWordIndexRef.current] = {
+          ...next[currentWordIndexRef.current],
           typed: value,
           letters: [...letters, ...extraLetters],
         };
         return next;
       });
-
-      // Track keystrokes
-      if (value.length > currentInput.length) {
-        totalKeystrokesRef.current++;
-        const currentWord = words[currentWordIndex];
-        const pos = value.length - 1;
-        if (pos < currentWord.length && value[pos] === currentWord[pos]) {
-          // correct (don't add yet, wait for word completion)
-        } else if (pos >= currentWord.length || value[pos] !== currentWord[pos]) {
-          errorCountRef.current++;
-        }
-      }
     },
-    [isFinished, isRunning, currentWordIndex, words, currentInput, startTimer]
+    [words, startTimer]
   );
 
   const reset = useCallback(() => {
@@ -226,6 +194,9 @@ export function useTypingEngine({ words, timerMode, onComplete }: UseTypingEngin
     correctCharsRef.current = 0;
     totalKeystrokesRef.current = 0;
     errorCountRef.current = 0;
+    currentWordIndexRef.current = 0;
+    isFinishedRef.current = false;
+    isRunningRef.current = false;
     setCurrentWordIndex(0);
     setCurrentInput('');
     setTimeLeft(parseInt(timerMode));
@@ -233,9 +204,6 @@ export function useTypingEngine({ words, timerMode, onComplete }: UseTypingEngin
     setIsFinished(false);
     setWpm(0);
     setAccuracy(100);
-    setCorrectChars(0);
-    setTotalKeystrokes(0);
-    setErrorCount(0);
     setWordStates(
       words.map((word, i) => ({
         word,
@@ -247,11 +215,7 @@ export function useTypingEngine({ words, timerMode, onComplete }: UseTypingEngin
     );
   }, [words, timerMode]);
 
-  // Progress percentage for multiplayer
-  const progress = Math.min(
-    Math.round((currentWordIndex / words.length) * 100),
-    100
-  );
+  const progress = Math.min(Math.round((currentWordIndex / words.length) * 100), 100);
 
   return {
     wordStates,

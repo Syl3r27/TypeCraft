@@ -1,6 +1,6 @@
 'use client';
 import { useRef, useEffect, useCallback, useState } from 'react';
-import { RefreshCw, Settings } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { useTypingEngine } from '@/hooks/useTypingEngine';
 import { useAuth } from '@/hooks/useAuth';
 import { useStore } from '@/store/useStore';
@@ -23,26 +23,28 @@ interface TypingTestProps {
 export function TypingTest({ onProgressUpdate, externalWords, hideSettings }: TypingTestProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const { timerMode, setTimerMode } = useStore();
-  const { saveResult, isLoggedIn } = useAuth();
+  const { saveResult } = useAuth();
+  const [isFocused, setIsFocused] = useState(false);
 
-  const [words] = useState<string[]>(() => externalWords || generateWords(120));
+  // Stable word list — regenerated only on reset
+  const [words, setWords] = useState<string[]>(() => externalWords || generateWords(120));
+
+  // Single source of truth: result being set IS the finished signal
   const [result, setResult] = useState<TestResult | null>(null);
 
   const handleComplete = useCallback(
     async (r: TestResult) => {
+      // Set result immediately — this triggers the results screen
       setResult(r);
-      try {
-        await saveResult({
-          wpm: r.wpm,
-          accuracy: r.accuracy,
-          errors: r.errors,
-          duration: r.duration,
-          mode: r.mode,
-          wordCount: r.wordCount,
-        });
-      } catch {
-        // Guest mode — no save needed
-      }
+      // Best-effort save (fire and forget)
+      saveResult({
+        wpm: r.wpm,
+        accuracy: r.accuracy,
+        errors: r.errors,
+        duration: r.duration,
+        mode: r.mode,
+        wordCount: r.wordCount,
+      }).catch(() => {/* guest mode — ignore */});
     },
     [saveResult]
   );
@@ -72,28 +74,33 @@ export function TypingTest({ onProgressUpdate, externalWords, hideSettings }: Ty
     }
   }, [progress, wpm, accuracy, isRunning, onProgressUpdate]);
 
-  // Focus input on mount and click
+  // Auto-focus on mount
   useEffect(() => {
     inputRef.current?.focus();
-  }, [result]);
+  }, []);
 
   const handleRetry = useCallback(() => {
     setResult(null);
+    if (!externalWords) {
+      setWords(generateWords(120));
+    }
     reset();
     setTimeout(() => inputRef.current?.focus(), 50);
-  }, [reset]);
+  }, [reset, externalWords]);
 
   const handleModeChange = useCallback(
     (mode: TimerMode) => {
       setTimerMode(mode);
       setResult(null);
+      setWords(generateWords(120));
       reset();
       setTimeout(() => inputRef.current?.focus(), 50);
     },
     [setTimerMode, reset]
   );
 
-  if (result && isFinished) {
+  // Show results screen as soon as result is set
+  if (result) {
     return <ResultsScreen result={result} onRetry={handleRetry} />;
   }
 
@@ -102,7 +109,6 @@ export function TypingTest({ onProgressUpdate, externalWords, hideSettings }: Ty
       {/* Settings bar */}
       {!hideSettings && (
         <div className="flex items-center justify-between mb-8">
-          {/* Timer mode selector */}
           <div className="flex items-center gap-1 bg-surface rounded-xl p-1">
             {TIMER_MODES.map((mode) => (
               <button
@@ -120,54 +126,48 @@ export function TypingTest({ onProgressUpdate, externalWords, hideSettings }: Ty
             ))}
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleRetry}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-text-secondary hover:text-text-primary rounded-lg hover:bg-surface transition-colors"
-              title="Restart (Tab)"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">restart</span>
-            </button>
-          </div>
+          <button
+            onClick={handleRetry}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-text-secondary hover:text-text-primary rounded-lg hover:bg-surface transition-colors"
+            title="Restart (Tab)"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">restart</span>
+          </button>
         </div>
       )}
 
-      {/* Stats */}
+      {/* Live stats */}
       <div className="mb-6">
         <StatsPanel
           wpm={wpm}
           accuracy={accuracy}
           timeLeft={timeLeft}
           isRunning={isRunning}
-          errors={wordStates.filter((w) => w.isCompleted && w.letters.some((l) => l.state === 'incorrect')).length}
+          errors={wordStates.filter(
+            (w) => w.isCompleted && w.letters.some((l) => l.state === 'incorrect')
+          ).length}
         />
       </div>
 
       {/* Timer bar */}
       <div className="mb-6">
-        <TimerBar
-          timeLeft={timeLeft}
-          totalTime={parseInt(timerMode)}
-          isRunning={isRunning}
-        />
+        <TimerBar timeLeft={timeLeft} totalTime={parseInt(timerMode)} isRunning={isRunning} />
       </div>
 
-      {/* Word display — clickable area */}
+      {/* Word display — click anywhere to focus the hidden input */}
       <div
         className="glass-card rounded-2xl p-6 sm:p-8 cursor-text mb-4 relative"
         onClick={() => inputRef.current?.focus()}
       >
-        {/* Unfocused overlay */}
-        <div
-          className="absolute inset-0 rounded-2xl bg-bg/70 backdrop-blur-sm flex items-center justify-center z-10 transition-opacity duration-200"
-          style={{
-            opacity: document.activeElement === inputRef.current ? 0 : 0,
-            pointerEvents: 'none',
-          }}
-        >
-          <span className="text-text-secondary text-sm font-mono">Click to focus</span>
-        </div>
+        {/* Click-to-focus hint when blurred */}
+        {!isFocused && (
+          <div className="absolute inset-0 rounded-2xl bg-bg/60 backdrop-blur-[2px] flex items-center justify-center z-10">
+            <span className="text-text-secondary text-sm font-mono px-4 py-2 bg-surface rounded-xl border border-white/8">
+              Click here to start typing
+            </span>
+          </div>
+        )}
 
         <WordDisplay
           wordStates={wordStates}
@@ -176,19 +176,19 @@ export function TypingTest({ onProgressUpdate, externalWords, hideSettings }: Ty
         />
       </div>
 
-      {/* Hidden input — captures all typing */}
+      {/* Hidden input — all keystrokes captured here */}
       <input
         ref={inputRef}
         type="text"
         value={currentInput}
         onChange={(e) => handleInput(e.target.value)}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
         onKeyDown={(e) => {
-          // Tab = restart
           if (e.key === 'Tab') {
             e.preventDefault();
             handleRetry();
           }
-          // Prevent backspace from going to previous word (optional)
         }}
         className="sr-only"
         autoComplete="off"
@@ -197,11 +197,16 @@ export function TypingTest({ onProgressUpdate, externalWords, hideSettings }: Ty
         spellCheck={false}
         data-gramm="false"
         aria-label="Typing input"
+        tabIndex={0}
       />
 
       <div className="text-center mt-4">
         <span className="text-xs text-text-tertiary font-mono">
-          press <kbd className="px-1.5 py-0.5 rounded bg-surface text-text-secondary">tab</kbd> to restart
+          press{' '}
+          <kbd className="px-1.5 py-0.5 rounded bg-surface text-text-secondary border border-white/8">
+            tab
+          </kbd>{' '}
+          to restart
         </span>
       </div>
     </div>
