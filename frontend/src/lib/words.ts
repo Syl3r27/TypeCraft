@@ -1,0 +1,56 @@
+export const COMMON_WORDS = [
+  'the', 'be', 'to', 'of', 'and', 'a', 'in', 'that', 'have', 'it',
+  'for', 'not', 'on', 'with', 'he', 'as', 'you', 'do', 'at', 'this',
+  'but', 'his', 'by', 'from', 'they', 'we', 'say', 'her', 'she', 'or',
+  'an', 'will', 'my', 'one', 'all', 'would', 'there', 'their', 'what',
+  'so', 'up', 'out', 'if', 'about', 'who', 'get', 'which', 'go', 'me',
+  'when', 'make', 'can', 'like', 'time', 'no', 'just', 'him', 'know',
+  'take', 'people', 'into', 'year', 'your', 'good', 'some', 'could',
+  'them', 'see', 'other', 'than', 'then', 'now', 'look', 'only', 'come',
+  'its', 'over', 'think', 'also', 'back', 'after', 'use', 'two', 'how',
+  'our', 'work', 'first', 'well', 'way', 'even', 'new', 'want', 'because',
+  'any', 'these', 'give', 'day', 'most', 'us', 'great', 'between', 'need',
+  'large', 'often', 'hand', 'high', 'place', 'hold', 'turn', 'face', 'sun',
+  'long', 'find', 'same', 'tell', 'keep', 'show', 'move', 'live', 'every',
+  'draw', 'ask', 'write', 'door', 'light', 'voice', 'power', 'town', 'fine',
+  'drive', 'short', 'road', 'book', 'stop', 'second', 'late', 'miss', 'idea',
+  'enough', 'eat', 'watch', 'far', 'real', 'almost', 'let', 'above', 'girl',
+  'list', 'song', 'leave', 'family', 'body', 'music', 'color', 'stand', 'fish',
+  'area', 'mark', 'dog', 'horse', 'problem', 'complete', 'room', 'knew', 'since',
+  'ever', 'piece', 'told', 'usually', 'friends', 'easy', 'heard', 'order', 'red',
+  'sure', 'become', 'ship', 'across', 'today', 'during', 'better', 'best', 'low',
+  'black', 'whole', 'measure', 'remember', 'early', 'waves', 'listen', 'wind',
+  'rock', 'space', 'fast', 'several', 'morning', 'true', 'hundred', 'against',
+  'table', 'north', 'slowly', 'money', 'map', 'farm', 'cold', 'plan', 'notice',
+  'south', 'sing', 'ground', 'fall', 'king', 'unit', 'certain', 'field', 'travel',
+  'wood', 'fire', 'upon', 'done', 'road', 'half', 'fly', 'gave', 'box', 'wait',
+  'person', 'strong', 'stars', 'front', 'feel', 'fact', 'street', 'contain',
+  'course', 'surface', 'produce', 'ocean', 'class', 'note', 'nothing', 'rest',
+  'inside', 'stay', 'green', 'known', 'island', 'week', 'less', 'machine', 'base',
+  'stood', 'plane', 'system', 'behind', 'round', 'boat', 'game', 'force',
+  'brought', 'warm', 'common', 'bring', 'dry', 'though', 'language', 'shape',
+  'deep', 'clear', 'government', 'cut', 'talk', 'soon', 'number', 'word', 'part',
+  'place', 'end', 'where', 'much', 'before', 'right', 'too', 'mean', 'old', 'any',
+  'same', 'tell', 'boy', 'follow', 'came', 'want', 'show', 'also', 'around', 'form',
+  'small', 'set', 'put', 'end', 'does', 'another', 'large', 'need', 'home', 'read',
+  'hand', 'port', 'large', 'spell', 'land', 'here', 'must', 'big', 'high', 'such',
+  'along', 'own', 'below', 'country', 'plant', 'last', 'school', 'father', 'keep',
+  'tree', 'never', 'start', 'city', 'earth', 'eye', 'light', 'thought', 'head',
+  'under', 'story', 'saw', 'left', 'late', 'run', 'while', 'press', 'close',
+  'night', 'real', 'life', 'few', 'open', 'seem', 'together', 'next', 'white',
+  'children', 'begin', 'got', 'walk', 'example', 'ease', 'paper', 'group', 'always',
+  'music', 'those', 'both', 'mark', 'book', 'letter', 'mile', 'river', 'car', 'feet',
+  'care', 'second', 'enough', 'plain', 'girl', 'usual', 'young', 'ready', 'above',
+  'ever', 'red', 'list', 'though', 'feel', 'talk', 'bird', 'soon', 'body', 'dog',
+  'family', 'direct', 'pose', 'leave', 'song', 'measure', 'door', 'product', 'black',
+  'short', 'numeral', 'class', 'wind', 'question', 'happen', 'complete', 'ship',
+  'area', 'half', 'rock', 'order', 'fire', 'south', 'problem', 'piece', 'told',
+];
+
+export function generateWords(count: number): string[] {
+  const words: string[] = [];
+  for (let i = 0; i < count; i++) {
+    words.push(COMMON_WORDS[Math.floor(Math.random() * COMMON_WORDS.length)]);
+  }
+  return words;
+}

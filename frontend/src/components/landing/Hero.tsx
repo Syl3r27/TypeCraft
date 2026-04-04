@@ -27,7 +27,7 @@ export function Hero() {
 
       // Staggered entrance
       const tl = gsap.timeline({ delay: 0.1 });
- 
+
       tl.to(titleRef.current, { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' })
         .to(subtitleRef.current, { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' }, '-=0.4')
         .to(ctaRef.current, { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' }, '-=0.3')
@@ -48,9 +48,9 @@ export function Hero() {
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-accent/5 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-blue-500/3 rounded-full blur-[100px] pointer-events-none" />
 
-      <div className="relative z-10 max-w-4xl mx-auto px-4 text-center">
+      <div className="relative z-10 max-w-4xl mx-auto text-center">
         {/* Badge */}
-        <div className="inline-flex items-center gap-2 mx-3 px-3 py-1.5 rounded-full bg-accent/10 border border-accent/20 text-accent text-xs font-mono mb-10">
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/10 border border-accent/20 text-accent text-xs font-mono mb-8">
           <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
           Real-time multiplayer typing
         </div>

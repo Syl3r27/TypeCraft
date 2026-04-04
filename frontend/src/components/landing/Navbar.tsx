@@ -5,9 +5,11 @@ import { Keyboard, User, LogOut, Trophy, Zap, Menu, X } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 
+
 export function Navbar() {
   const { user, isLoggedIn, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
+
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-bg/80 backdrop-blur-md">
@@ -18,7 +20,7 @@ export function Navbar() {
             <Keyboard className="w-4 h-4 text-accent" />
           </div>
           <span className="font-mono font-semibold text-text-primary tracking-tight">
-            Type<span className="text-accent">Blaze</span>
+            type<span className="text-accent">craft</span>
           </span>
         </Link>
 
@@ -48,7 +50,9 @@ export function Navbar() {
               </button>
             </div>
           ) : (
-            <button className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-text-secondary hover:text-text-primary hover:bg-surface rounded-lg transition-colors">
+            <button 
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-text-secondary hover:text-text-primary hover:bg-surface rounded-lg transition-colors"
+            >
               <User className="w-3.5 h-3.5" />
               Sign in
             </button>
@@ -77,7 +81,9 @@ export function Navbar() {
               Sign out ({user?.username})
             </button>
           ) : (
-            <button className="text-left px-3 py-2 text-sm text-text-secondary hover:text-text-primary rounded-lg hover:bg-surface transition-colors">
+            <button
+              className="text-left px-3 py-2 text-sm text-text-secondary hover:text-text-primary rounded-lg hover:bg-surface transition-colors"
+            >
               Sign in
             </button>
           )}

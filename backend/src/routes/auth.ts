@@ -81,6 +81,7 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
 
     if(!isMatch) {
         res.status(401).json({message: 'Invalid Credentials'});
+        return;
     }
 
     const token = signToken(user._id.toString());
