@@ -6,8 +6,8 @@ export const metadata: Metadata = {
   description: 'Test your typing speed, compete with friends in real-time multiplayer races, and track your progress over time.',
   keywords: ['typing test', 'wpm', 'typing speed', 'multiplayer typing', 'monkeytype'],
   icons: {
-    icon: '/favicon.ico',
-    apple: '/favicon.ico',
+    icon: '/favicon.png',
+    apple: '/favicon.png',
   },
   openGraph: {
     title: 'TypeCraft',
