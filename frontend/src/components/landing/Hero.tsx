@@ -110,7 +110,7 @@ export function Hero() {
             className="btn-brutal flex items-center gap-2 px-8 py-4 bg-surface text-white font-pixel text-xs hover:bg-surface-hover"
           >
             <Users className="w-4 h-4 text-accent2" />
-            RACE NOW
+            RACE MULTIPLAYER
           </Link>
         </div>
 
