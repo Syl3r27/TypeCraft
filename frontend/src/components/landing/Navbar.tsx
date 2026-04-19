@@ -1,7 +1,8 @@
 'use client';
 import Link from 'next/link';
 import { useState } from 'react';
-import { Keyboard, User, LogOut, Trophy, Zap, Menu, X, BarChart3 } from 'lucide-react';
+import Image from 'next/image';
+import { User, LogOut, Trophy, Zap, Menu, X, BarChart3 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { AuthModal } from '@/components/ui/AuthModal';
 
@@ -20,9 +21,14 @@ export function Navbar() {
          <div className="w-full max-w-[1400px] mx-auto px-3 sm:px-4 h-16 flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 bg-accent border-[3px] border-black shadow-brutal-sm flex items-center justify-center group-hover:translate-x-[2px] group-hover:translate-y-[2px] group-hover:shadow-none transition-all">
-              <Keyboard className="w-4 h-4 text-white" />
-            </div>
+            <Image
+              src="/logo.png"
+              alt="TypeCraft logo"
+              width={36}
+              height={36}
+              className="group-hover:scale-110 transition-transform duration-200"
+              style={{ imageRendering: 'pixelated' }}
+            />
             <span className="font-pixel text-xs text-white tracking-tight logo-glow">
               Type<span className="text-accent">Craft</span>
             </span>

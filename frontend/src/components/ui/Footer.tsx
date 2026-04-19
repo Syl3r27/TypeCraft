@@ -12,7 +12,8 @@ export function Footer() {
               href="https://omprakashpati.vercel.app/"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-accent hover:text-accent-hover transition-colors"
+              className="text-accent2 hover:text-accent2-hover transition-all duration-300 hover:scale-150 hover:underline inline-block"
+
             >
               OM
             </a>
@@ -21,7 +22,8 @@ export function Footer() {
               href="https://konal.in"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-accent2 hover:text-accent2-hover transition-colors"
+              className="text-accent2 hover:text-accent2-hover transition-all duration-300 hover:scale-150 hover:underline inline-block"
+
             >
               KONAL
             </a>
